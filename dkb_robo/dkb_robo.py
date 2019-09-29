@@ -367,7 +367,7 @@ class DKBRobo(object):
         # catch login error
         if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
             print('Login failed! Aborting...')
-            sys.exit(0)
+            raise RuntimeError
 
         # catch generic notices
         if soup.find("form", attrs={'id':'genericNoticeForm'}):
@@ -384,8 +384,46 @@ class DKBRobo(object):
             last_login = last_login.replace('Letzte Anmeldung:', '')
             self.last_login = last_login
 
-            # parse account date
-            self.account_dic = self.parse_overview(soup)
+        if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
+            soup = self._input_tan(soup)
+
+        # parse account data
+        self.account_dic = self.parse_overview(soup)
+
+    def _input_tan(self, soup):
+        # sometime the website shows an empty form...
+        if not soup.find("input", attrs={'name': 'tan'}):
+            self.dkb_br.select_form('#next')
+            self.dkb_br.submit_selected()
+            soup = self.dkb_br.get_current_page()
+
+        self.dkb_br.select_form('#next')
+        formtext = soup.find("p", attrs={"class": "clearfix formBox"})
+
+        # for chipTAN there will be some text with a "Startcode"
+        startcode = re.search("Startcode [0-9]{8}", formtext.text)
+        if startcode:
+            print(startcode.group())
+
+        # TODO find out if we need anything else for other MFA methods
+        self.dkb_br["tan"] = input("TAN: ")
+
+        # submit form and check response
+        self.dkb_br.submit_selected()
+        soup = self.dkb_br.get_current_page()
+
+        # catch tan error
+        if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
+            print('Login failed! Aborting...')
+            raise RuntimeError
+
+        # catch generic notices
+        if soup.find("form", attrs={'id':'genericNoticeForm'}):
+            self.dkb_br.open(login_url)
+            soup = self.dkb_br.get_current_page()
+
+        return soup
+
 
     def logout(self):
         """ logout from DKB banking area
