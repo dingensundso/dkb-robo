@@ -398,10 +398,9 @@ class DKBRobo(object):
             soup = self.dkb_br.get_current_page()
 
         self.dkb_br.select_form('#next')
-        formtext = soup.find("p", attrs={"class": "clearfix formBox"})
 
         # for chipTAN there will be some text with a "Startcode"
-        startcode = re.search("Startcode [0-9]{8}", formtext.text)
+        startcode = re.search("Startcode [0-9]{8}", soup.text)
         if startcode:
             print(startcode.group())
 
