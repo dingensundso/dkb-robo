@@ -367,7 +367,7 @@ class DKBRobo(object):
         # catch login error
         if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
             print('Login failed! Aborting...')
-            raise RuntimeError
+            raise RuntimeError('Login failed')
 
         # catch generic notices
         if soup.find("form", attrs={'id':'genericNoticeForm'}):
